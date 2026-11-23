@@ -6,8 +6,27 @@ import { hashPassword } from '../utils/crypto.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '../..');
-const SAMPLE_DATA_PATH = path.join(ROOT_DIR, 'database', 'sample-data.json');
-const LIVE_DATA_PATH = path.join(ROOT_DIR, 'database', 'live-data.json');
+const DATA_DIR = process.env.DATA_DIR || path.join(ROOT_DIR, 'database');
+const SAMPLE_DATA_PATH = path.join(DATA_DIR, 'sample-data.json');
+const LIVE_DATA_PATH = path.join(DATA_DIR, 'live-data.json');
+
+function loadSeed() {
+  try {
+    return prepareSeedData(JSON.parse(fs.readFileSync(SAMPLE_DATA_PATH, 'utf8')));
+  } catch {
+    console.warn('sample-data.json missing/unreadable; starting with an empty store.');
+    return prepareSeedData({});
+  }
+}
+
+function writeLive(store) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(LIVE_DATA_PATH, JSON.stringify(store, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('Could not write live-data.json (read-only host?). Using memory only:', err.message);
+  }
+}
 
 let memoryStore = null;
 
@@ -48,9 +67,8 @@ export async function connectDatabase() {
   }
 
   if (!fs.existsSync(LIVE_DATA_PATH)) {
-    const raw = JSON.parse(fs.readFileSync(SAMPLE_DATA_PATH, 'utf8'));
-    memoryStore = prepareSeedData(raw);
-    fs.writeFileSync(LIVE_DATA_PATH, JSON.stringify(memoryStore, null, 2), 'utf8');
+    memoryStore = loadSeed();
+    writeLive(memoryStore);
   } else {
     memoryStore = JSON.parse(fs.readFileSync(LIVE_DATA_PATH, 'utf8'));
   }
@@ -63,9 +81,8 @@ export function getStore() {
     if (fs.existsSync(LIVE_DATA_PATH)) {
       memoryStore = JSON.parse(fs.readFileSync(LIVE_DATA_PATH, 'utf8'));
     } else {
-      const raw = JSON.parse(fs.readFileSync(SAMPLE_DATA_PATH, 'utf8'));
-      memoryStore = prepareSeedData(raw);
-      fs.writeFileSync(LIVE_DATA_PATH, JSON.stringify(memoryStore, null, 2), 'utf8');
+      memoryStore = loadSeed();
+      writeLive(memoryStore);
     }
   }
   return memoryStore;
@@ -73,5 +90,5 @@ export function getStore() {
 
 export function persistStore() {
   if (!memoryStore) return;
-  fs.writeFileSync(LIVE_DATA_PATH, JSON.stringify(memoryStore, null, 2), 'utf8');
+  writeLive(memoryStore);
 }

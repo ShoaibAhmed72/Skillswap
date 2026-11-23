@@ -98,10 +98,9 @@ export async function apiFetch(endpoint, options = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  //const response = await fetch(endpoint,
-    
-    const API_BASE_URL = 'https://skillswap.enzonic.dev';
-const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // Same-origin by default; set window.API_BASE_URL in a script tag to point elsewhere
+  const API_BASE_URL = window.API_BASE_URL || '';
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });

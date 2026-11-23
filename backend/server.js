@@ -24,6 +24,15 @@ const SRC_ASSETS_DIR = path.join(ROOT_DIR, 'src', 'assets');
 export function createApp() {
   const app = express();
 
+  // CORS: lets a frontend on another origin/port/domain call this API
+  app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true }));
 
@@ -75,8 +84,8 @@ async function startServer() {
   });
 }
 
-// Start server when run directly
-if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+// Always start (also works under pm2 / hosting wrappers), except in tests
+if (process.env.NODE_ENV !== 'test') {
   startServer().catch((err) => {
     console.error('Failed to start SkillSwap server:', err);
     process.exit(1);
