@@ -99,7 +99,10 @@ export async function apiFetch(endpoint, options = {}) {
   }
 
   // Same-origin by default; set window.API_BASE_URL in a script tag to point elsewhere
-  const API_BASE_URL = window.API_BASE_URL || '';
+  //const API_BASE_URL = window.API_BASE_URL || '';
+  const API_BASE_URL =
+  window.API_BASE_URL ||
+  (location.hostname.endsWith('vercel.app') ? 'https://skillswap.enzonic.dev' : '');
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
