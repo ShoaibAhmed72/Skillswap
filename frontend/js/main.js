@@ -99,7 +99,14 @@ export async function apiFetch(endpoint, options = {}) {
   }
 
   // Same-origin by default; set window.API_BASE_URL in a script tag to point elsewhere
-  const API_BASE_URL = window.API_BASE_URL || 'https://skillswap.enzonic.dev';
+  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+  const API_BASE_URL =
+    window.API_BASE_URL ||
+    (isLocal
+      ? location.port === '3000'
+        ? ''
+        : 'http://localhost:3000'
+      : 'https://skillswap.enzonic.dev');
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
